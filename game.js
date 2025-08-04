@@ -6,15 +6,16 @@ let airplaneImg = new Image();
 let cannonImg = new Image();
 let shootSound = new Audio('shoot.mp3');
 let boomSound = new Audio('boom.mp3');
-let background = "#000";
+let backgroundImg = new Image();
 
 airplaneImg.src = 'plane.png';
 cannonImg.src = 'truck.png';
+backgroundImg.src = 'background.jpg';
 
 let cannon = { x: canvas.width / 2 - 25, y: canvas.height - 60, width: 50, height: 50 };
 let bullets = [];
 let airplanes = [];
-let explosions = [];
+let bombs = [];
 let score = 0;
 let stage = 1;
 let hitsThisRound = 0;
@@ -24,7 +25,10 @@ let showMessage = false;
 
 function spawnAirplane() {
   const speed = 1 + 0.5 * (stage - 1);
-  airplanes.push({ x: Math.random() * (canvas.width - 40), y: -60, speed: speed });
+  const direction = Math.random() > 0.5 ? 1 : -1;
+  const y = Math.random() * 100 + 20;
+  const x = direction === 1 ? -40 : canvas.width + 40;
+  airplanes.push({ x, y, speed, direction, dropTimer: 0 });
 }
 
 function drawAirplanes() {
@@ -32,7 +36,26 @@ function drawAirplanes() {
 }
 
 function moveAirplanes() {
-  airplanes.forEach(p => p.y += p.speed);
+  airplanes.forEach(p => {
+    p.x += p.speed * p.direction;
+    p.dropTimer++;
+    if (p.dropTimer > 60) {
+      bombs.push({ x: p.x + 20, y: p.y + 40, speed: 3 });
+      p.dropTimer = 0;
+    }
+  });
+  // 移除出界飞机
+  airplanes = airplanes.filter(p => p.x > -50 && p.x < canvas.width + 50);
+}
+
+function drawBombs() {
+  ctx.fillStyle = 'red';
+  bombs.forEach(b => ctx.beginPath() || ctx.arc(b.x, b.y, 6, 0, 2 * Math.PI) || ctx.fill());
+}
+
+function moveBombs() {
+  bombs.forEach(b => b.y += b.speed);
+  bombs = bombs.filter(b => b.y < canvas.height);
 }
 
 function drawCannon() {
@@ -46,6 +69,7 @@ function drawBullets() {
 
 function moveBullets() {
   bullets.forEach(b => b.y -= 5);
+  bullets = bullets.filter(b => b.y > 0);
 }
 
 function checkCollisions() {
@@ -66,6 +90,19 @@ function checkCollisions() {
       }
     });
   });
+
+  bombs.forEach((b, bi) => {
+    if (
+      b.x > cannon.x &&
+      b.x < cannon.x + cannon.width &&
+      b.y > cannon.y &&
+      b.y < cannon.y + cannon.height
+    ) {
+      bombs.splice(bi, 1);
+      lives--;
+      if (lives <= 0) gameOver = true;
+    }
+  });
 }
 
 function drawUI() {
@@ -83,25 +120,16 @@ function drawUI() {
 
 function gameLoop() {
   if (gameOver) return;
-  ctx.fillStyle = background;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
   moveAirplanes();
+  moveBombs();
   moveBullets();
   checkCollisions();
   drawAirplanes();
   drawCannon();
   drawBullets();
+  drawBombs();
   drawUI();
-
-  airplanes = airplanes.filter(p => {
-    if (p.y > canvas.height) {
-      lives--;
-      if (lives <= 0) gameOver = true;
-      return false;
-    }
-    return true;
-  });
-
   requestAnimationFrame(gameLoop);
 }
 
@@ -115,5 +143,5 @@ canvas.addEventListener('touchstart', e => {
   }
 });
 
-setInterval(spawnAirplane, 2000);
+setInterval(spawnAirplane, 2500);
 gameLoop();
