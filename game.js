@@ -25,6 +25,7 @@ let kills = 0;
 let round = 1;
 let totalRounds = 5;
 let isGameOver = false;
+let hasWon = false;
 
 function drawTruck() {
   ctx.drawImage(truckImage, truckX, truckY, 50, 50);
@@ -40,6 +41,14 @@ function drawBullets() {
 }
 
 function drawEnemies() {
+  if (enemies.length < 5) {
+    enemies.push({
+      x: Math.random() * (canvas.width - 50),
+      y: 30 + Math.random() * 50,
+      dx: 1 + Math.random()
+    });
+  }
+
   enemies.forEach((e, index) => {
     e.x += e.dx;
     if (e.x < 0 || e.x > canvas.width - 50) e.dx *= -1;
@@ -99,10 +108,17 @@ function drawWinMessage() {
   ctx.fillText("LAK祝你Lucky常伴", canvas.width / 2 - 110, canvas.height / 2 + 30);
 }
 
+function drawGameOver() {
+  ctx.fillStyle = "red";
+  ctx.font = "26px Arial";
+  ctx.fillText("Game Over", canvas.width / 2 - 60, canvas.height / 2);
+}
+
 function gameLoop() {
   if (isGameOver) {
     drawBackground();
-    drawWinMessage();
+    if (hasWon) drawWinMessage();
+    else drawGameOver();
     return;
   }
 
@@ -117,22 +133,16 @@ function gameLoop() {
   if (kills >= 10) {
     if (round >= totalRounds) {
       isGameOver = true;
+      hasWon = true;
     } else {
       round++;
       kills = 0;
-      enemies = [];
-      for (let i = 0; i < round + 2; i++) {
-        enemies.push({
-          x: Math.random() * (canvas.width - 50),
-          y: 30 + Math.random() * 50,
-          dx: 1 + Math.random(),
-        });
-      }
     }
   }
 
   if (lives <= 0) {
     isGameOver = true;
+    hasWon = false;
   }
 
   requestAnimationFrame(gameLoop);
@@ -161,9 +171,5 @@ document.addEventListener("touchmove", (e) => {
 document.addEventListener("touchend", () => {
   isDragging = false;
 });
-
-for (let i = 0; i < 3; i++) {
-  enemies.push({ x: 60 * i, y: 40, dx: 1 + Math.random() });
-}
 
 background.onload = gameLoop;
