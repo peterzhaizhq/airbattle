@@ -2,173 +2,168 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const background = new Image();
+background.src = "background.jpg";
 
-let cannon = {
-    x: canvas.width / 2 - 50,
-    y: canvas.height - 80,
-    width: 100,
-    height: 50,
-    image: new Image(),
-    speed: 10
-};
-cannon.image.src = "truck.png";
+const planeImage = new Image();
+planeImage.src = "plane.png";
 
+const truckImage = new Image();
+truckImage.src = "truck.png";
+
+const shootSound = new Audio("shoot.mp3");
+const boomSound = new Audio("boom.mp3");
+
+let truckX = canvas.width / 2 - 25;
+let truckY = canvas.height - 60;
 let bullets = [];
 let enemies = [];
 let bombs = [];
-let score = 0;
-let stage = 1;
-let lives = 5;
-let enemySpeed = 2;
-let bombSpeed = 4;
-let lastEnemySpawnTime = 0;
-let lastBombTime = 0;
-let gameOver = false;
 
-document.addEventListener("touchstart", shootBullet);
-document.addEventListener("touchmove", function (e) {
-    cannon.x = e.touches[0].clientX - cannon.width / 2;
+let lives = 5;
+let kills = 0;
+let round = 1;
+let totalRounds = 5;
+let isGameOver = false;
+
+function drawTruck() {
+  ctx.drawImage(truckImage, truckX, truckY, 50, 50);
+}
+
+function drawBullets() {
+  ctx.fillStyle = "yellow";
+  bullets.forEach((b, index) => {
+    b.y -= 6;
+    ctx.fillRect(b.x, b.y, 4, 10);
+    if (b.y < 0) bullets.splice(index, 1);
+  });
+}
+
+function drawEnemies() {
+  enemies.forEach((e, index) => {
+    e.x += e.dx;
+    if (e.x < 0 || e.x > canvas.width - 50) e.dx *= -1;
+    e.y += 0.3;
+    ctx.drawImage(planeImage, e.x, e.y, 50, 50);
+
+    if (Math.random() < 0.01) {
+      bombs.push({ x: e.x + 25, y: e.y + 50 });
+    }
+
+    bullets.forEach((b, bi) => {
+      if (b.x > e.x && b.x < e.x + 50 && b.y > e.y && b.y < e.y + 50) {
+        enemies.splice(index, 1);
+        bullets.splice(bi, 1);
+        kills++;
+        boomSound.play();
+      }
+    });
+  });
+}
+
+function drawBombs() {
+  ctx.fillStyle = "red";
+  bombs.forEach((b, index) => {
+    b.y += 4;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    if (b.y > canvas.height) bombs.splice(index, 1);
+    else if (
+      b.x > truckX && b.x < truckX + 50 &&
+      b.y > truckY && b.y < truckY + 50
+    ) {
+      lives--;
+      bombs.splice(index, 1);
+      boomSound.play();
+    }
+  });
+}
+
+function drawBackground() {
+  ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+}
+
+function drawUI() {
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("Lives: " + lives, 10, 20);
+  ctx.fillText("Kills: " + kills, 10, 40);
+  ctx.fillText("Round: " + round + "/" + totalRounds, 10, 60);
+}
+
+function drawWinMessage() {
+  ctx.fillStyle = "yellow";
+  ctx.font = "26px Arial";
+  ctx.fillText("你赢了！", canvas.width / 2 - 60, canvas.height / 2 - 10);
+  ctx.fillText("LAK祝你Lucky常伴", canvas.width / 2 - 110, canvas.height / 2 + 30);
+}
+
+function gameLoop() {
+  if (isGameOver) {
+    drawBackground();
+    drawWinMessage();
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+  drawTruck();
+  drawBullets();
+  drawEnemies();
+  drawBombs();
+  drawUI();
+
+  if (kills >= 10) {
+    if (round >= totalRounds) {
+      isGameOver = true;
+    } else {
+      round++;
+      kills = 0;
+      enemies = [];
+      for (let i = 0; i < round + 2; i++) {
+        enemies.push({
+          x: Math.random() * (canvas.width - 50),
+          y: 30 + Math.random() * 50,
+          dx: 1 + Math.random(),
+        });
+      }
+    }
+  }
+
+  if (lives <= 0) {
+    isGameOver = true;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener("click", () => {
+  bullets.push({ x: truckX + 23, y: truckY });
+  shootSound.play();
 });
 
-function shootBullet() {
-    bullets.push({
-        x: cannon.x + cannon.width / 2 - 5,
-        y: cannon.y,
-        width: 10,
-        height: 20
-    });
-    const shootSound = new Audio("shoot.mp3");
-    shootSound.play();
+let isDragging = false;
+document.addEventListener("touchstart", (e) => {
+  isDragging = true;
+});
+
+document.addEventListener("touchmove", (e) => {
+  if (isDragging) {
+    let touch = e.touches[0];
+    let rect = canvas.getBoundingClientRect();
+    truckX = touch.clientX - rect.left - 25;
+    if (truckX < 0) truckX = 0;
+    if (truckX > canvas.width - 50) truckX = canvas.width - 50;
+  }
+});
+
+document.addEventListener("touchend", () => {
+  isDragging = false;
+});
+
+for (let i = 0; i < 3; i++) {
+  enemies.push({ x: 60 * i, y: 40, dx: 1 + Math.random() });
 }
 
-function spawnEnemy() {
-    let direction = Math.random() < 0.5 ? 1 : -1;
-    let x = direction === 1 ? -100 : canvas.width + 100;
-
-    let enemy = {
-        x: x,
-        y: Math.random() * 150 + 50,
-        width: 80,
-        height: 60,
-        image: new Image(),
-        direction: direction,
-        speed: enemySpeed
-    };
-    enemy.image.src = "plane.png";
-    enemies.push(enemy);
-}
-
-function updateBombs() {
-    for (let enemy of enemies) {
-        if (Math.random() < 0.01) {
-            bombs.push({
-                x: enemy.x + enemy.width / 2 - 5,
-                y: enemy.y + enemy.height,
-                width: 10,
-                height: 20
-            });
-        }
-    }
-
-    for (let i = 0; i < bombs.length; i++) {
-        bombs[i].y += bombSpeed;
-        if (
-            bombs[i].x < cannon.x + cannon.width &&
-            bombs[i].x + bombs[i].width > cannon.x &&
-            bombs[i].y < cannon.y + cannon.height &&
-            bombs[i].y + bombs[i].height > cannon.y
-        ) {
-            lives--;
-            bombs.splice(i, 1);
-            i--;
-        }
-    }
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(cannon.image, cannon.x, cannon.y, cannon.width, cannon.height);
-
-    for (let bullet of bullets) {
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-    }
-
-    for (let enemy of enemies) {
-        ctx.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height);
-    }
-
-    for (let bomb of bombs) {
-        ctx.fillStyle = "red";
-        ctx.fillRect(bomb.x, bomb.y, bomb.width, bomb.height);
-    }
-
-    ctx.fillStyle = "white";
-    ctx.font = "24px Arial";
-    ctx.fillText("Score: " + score, 20, 40);
-    ctx.fillText("Stage: " + stage, 20, 70);
-    ctx.fillText("Lives: " + lives, 20, 100);
-}
-
-function update() {
-    if (gameOver) return;
-
-    for (let bullet of bullets) {
-        bullet.y -= 8;
-    }
-
-    bullets = bullets.filter(bullet => bullet.y > 0);
-
-    for (let enemy of enemies) {
-        enemy.x += enemy.speed * enemy.direction;
-
-        if (enemy.x < -100 || enemy.x > canvas.width + 100) {
-            enemy.direction *= -1;
-        }
-
-        for (let i = 0; i < bullets.length; i++) {
-            if (
-                bullets[i].x < enemy.x + enemy.width &&
-                bullets[i].x + bullets[i].width > enemy.x &&
-                bullets[i].y < enemy.y + enemy.height &&
-                bullets[i].y + bullets[i].height > enemy.y
-            ) {
-                bullets.splice(i, 1);
-                let explosionSound = new Audio("boom.mp3");
-                explosionSound.play();
-                score++;
-                enemies.splice(enemies.indexOf(enemy), 1);
-                break;
-            }
-        }
-    }
-
-    if (score >= stage * 10) {
-        stage++;
-        enemySpeed += 1;
-        bombSpeed += 0.5;
-    }
-
-    updateBombs();
-
-    if (lives <= 0) {
-        gameOver = true;
-        alert("Game Over!");
-    }
-}
-
-function loop() {
-    let now = Date.now();
-    if (now - lastEnemySpawnTime > 3000) {
-        spawnEnemy();
-        lastEnemySpawnTime = now;
-    }
-
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-
-loop();
+background.onload = gameLoop;
