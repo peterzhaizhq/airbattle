@@ -3,15 +3,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Air Battle Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Air Defense Game</title>
   <style>
-    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
-    canvas { display: block; margin: 0 auto; background: #111; touch-action: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+    }
+    #scoreDisplay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 24px;
+      font-family: sans-serif;
+      z-index: 10;
+    }
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: red;
+      font-size: 36px;
+      font-family: sans-serif;
+      display: none;
+      animation: flash 1s infinite;
+      z-index: 20;
+    }
+    @keyframes flash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="scoreDisplay">Score: 0 | Round: 1 | Lives: 2</div>
+  <div id="message">翟习羽最厉害！</div>
+  <canvas id="gameCanvas"></canvas>
   <script src="game.js"></script>
 </body>
 </html>
