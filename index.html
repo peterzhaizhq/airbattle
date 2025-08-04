@@ -1,44 +1,17 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Air Battle Touch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Battle Game</title>
   <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
-    canvas { display: block; background-color: #111; }
-    #controls {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      display: flex;
-      gap: 20px;
-    }
-    .btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.3);
-      border: 2px solid white;
-    }
-    #shootBtn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      width: 80px;
-      height: 80px;
-      border-radius: 40px;
-      background-color: rgba(255,255,255,0.3);
-      border: 2px solid #fff;
-    }
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+    canvas { display: block; margin: 0 auto; background: #111; touch-action: none; }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <div id="controls">
-    <div class="btn" id="leftBtn"></div>
-    <div class="btn" id="rightBtn"></div>
-  </div>
-  <div id="shootBtn"></div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
   <script src="game.js"></script>
 </body>
 </html>

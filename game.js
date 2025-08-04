@@ -1,120 +1,92 @@
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-const shootBtn = document.getElementById("shootBtn");
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
+let truckImg = new Image();
+let planeImg = new Image();
+truckImg.src = 'truck.png';
+planeImg.src = 'plane.png';
 
+let shootSound = new Audio('shoot.mp3');
+let boomSound = new Audio('boom.mp3');
+
+let player = { x: 140, y: 520, width: 120, height: 80 };
+let plane = { x: 100, y: 50, width: 100, height: 100, hit: 0 };
 let bullets = [];
-let enemies = [];
 let bombs = [];
-let player = { x: canvas.width / 2 - 20, y: canvas.height - 60, width: 40, height: 30, lives: 10 };
-let airplane = { x: canvas.width / 2, y: 50, width: 60, height: 20, hits: 0 };
+let hits = 0, damages = 0;
 
-function drawPlayer() {
-    ctx.fillStyle = "red";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+canvas.addEventListener("pointerdown", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  if (x >= player.x && x <= player.x + player.width && y >= player.y && y <= player.y + player.height) {
+    canvas.addEventListener("pointermove", moveTruck);
+    canvas.addEventListener("pointerup", () => {
+      canvas.removeEventListener("pointermove", moveTruck);
+    }, { once: true });
+  } else {
+    shootBullet();
+  }
+});
+
+function moveTruck(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  player.x = x - player.width / 2;
 }
 
-function drawAirplane() {
-    ctx.fillStyle = "blue";
-    ctx.fillRect(airplane.x, airplane.y, airplane.width, airplane.height);
-}
-
-function drawBullets() {
-    ctx.fillStyle = "yellow";
-    bullets.forEach(b => {
-        ctx.fillRect(b.x, b.y, 4, 10);
-    });
-}
-
-function drawBombs() {
-    ctx.fillStyle = "orange";
-    bombs.forEach(b => {
-        ctx.fillRect(b.x, b.y, 6, 10);
-    });
-}
-
-function moveBullets() {
-    bullets.forEach(b => b.y -= 8);
-    bullets = bullets.filter(b => b.y > -10);
-}
-
-function moveBombs() {
-    bombs.forEach(b => b.y += 6);
-    bombs = bombs.filter(b => b.y < canvas.height + 10);
+function shootBullet() {
+  bullets.push({ x: player.x + player.width / 2 - 2, y: player.y });
+  shootSound.currentTime = 0;
+  shootSound.play();
 }
 
 function dropBomb() {
-    bombs.push({ x: airplane.x + airplane.width / 2, y: airplane.y + 10 });
+  bombs.push({ x: plane.x + plane.width / 2 - 4, y: plane.y + plane.height });
 }
 
-function moveAirplane() {
-    airplane.x += Math.random() < 0.5 ? -2 : 2;
-    if (airplane.x < 0) airplane.x = 0;
-    if (airplane.x + airplane.width > canvas.width) airplane.x = canvas.width - airplane.width;
-    if (Math.random() < 0.02) dropBomb();
-}
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(truckImg, player.x, player.y, player.width, player.height);
+  if (plane.hit < 2) ctx.drawImage(planeImg, plane.x, plane.y, plane.width, plane.height);
 
-function detectCollisions() {
-    // bullets hit airplane
-    bullets.forEach((b, bi) => {
-        if (b.x < airplane.x + airplane.width && b.x + 4 > airplane.x &&
-            b.y < airplane.y + airplane.height && b.y + 10 > airplane.y) {
-            bullets.splice(bi, 1);
-            airplane.hits++;
-        }
-    });
-
-    // bombs hit player
-    bombs.forEach((b, bi) => {
-        if (b.x < player.x + player.width && b.x + 6 > player.x &&
-            b.y < player.y + player.height && b.y + 10 > player.y) {
-            bombs.splice(bi, 1);
-            player.lives--;
-        }
-    });
-}
-
-function shoot() {
-    bullets.push({ x: player.x + player.width / 2 - 2, y: player.y });
-}
-
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPlayer();
-    drawAirplane();
-    drawBullets();
-    drawBombs();
-    moveBullets();
-    moveBombs();
-    moveAirplane();
-    detectCollisions();
-
-    if (airplane.hits >= 2) {
-        ctx.fillStyle = "white";
-        ctx.font = "30px sans-serif";
-        ctx.fillText("Airplane Down!", canvas.width / 2 - 80, canvas.height / 2);
-        return;
+  bullets.forEach((b, i) => {
+    b.y -= 5;
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(b.x, b.y, 4, 10);
+    if (b.y < 0) bullets.splice(i, 1);
+    else if (b.x > plane.x && b.x < plane.x + plane.width && b.y < plane.y + plane.height) {
+      plane.hit++;
+      boomSound.currentTime = 0;
+      boomSound.play();
+      bullets.splice(i, 1);
     }
+  });
 
-    if (player.lives <= 0) {
-        ctx.fillStyle = "white";
-        ctx.font = "30px sans-serif";
-        ctx.fillText("Game Over!", canvas.width / 2 - 80, canvas.height / 2);
-        return;
+  bombs.forEach((b, i) => {
+    b.y += 4;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(b.x, b.y, 8, 12);
+    if (b.y > canvas.height) bombs.splice(i, 1);
+    else if (b.x > player.x && b.x < player.x + player.width && b.y > player.y && b.y < player.y + player.height) {
+      damages++;
+      boomSound.currentTime = 0;
+      boomSound.play();
+      bombs.splice(i, 1);
     }
+  });
 
-    requestAnimationFrame(gameLoop);
+  if (damages >= 10) {
+    ctx.fillStyle = 'red';
+    ctx.font = '30px Arial';
+    ctx.fillText('GAME OVER', 100, 300);
+    return;
+  }
+
+  if (plane.hit < 2) plane.x += (Math.random() - 0.5) * 4;
+
+  requestAnimationFrame(draw);
 }
 
-shootBtn.addEventListener("touchstart", shoot);
-leftBtn.addEventListener("touchstart", () => player.x -= 15);
-rightBtn.addEventListener("touchstart", () => player.x += 15);
-
-window.onload = () => {
-    gameLoop();
-};
+setInterval(dropBomb, 1000);
+draw();
