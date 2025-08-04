@@ -1,8 +1,8 @@
 {
-  "name": "Air Defense Game",
-  "short_name": "AirDefense",
-  "start_url": "index.html",
+  "name": "Air Battle Game",
+  "short_name": "AirBattle",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#000000",
-  "description": "HTML5 Air Defense Game"
+  "description": "Simple geometric shooter game"
 }

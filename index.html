@@ -1,8 +1,26 @@
 <!DOCTYPE html>
-<html>
-<head><title>Air Defense</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Air Battle Game</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #shootBtn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 40px;
+            background-color: rgba(255,255,255,0.3);
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+<canvas id="gameCanvas"></canvas>
+<div id="shootBtn"></div>
 <script src="game.js"></script>
 </body>
 </html>
