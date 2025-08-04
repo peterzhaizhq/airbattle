@@ -18,7 +18,7 @@ let explosions = [];
 let score = 0;
 let stage = 1;
 let hitsThisRound = 0;
-let lives = 2;
+let lives = 5;
 let gameOver = false;
 let showMessage = false;
 
